@@ -60,7 +60,7 @@ public class Metrics {
     public synchronized void recordGanttEntry(Proceso p) {
         bitacoraGantt.add(new String[] {
                 String.valueOf(tiempoActual),
-                String.valueOf(p.getId()),
+                String.valueOf(p.getPid()),
                 p.getEstado()
         });
     }

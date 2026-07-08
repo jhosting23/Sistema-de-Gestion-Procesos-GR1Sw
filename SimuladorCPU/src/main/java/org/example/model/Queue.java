@@ -116,13 +116,13 @@ public class Queue {
      */
     public synchronized Proceso buscarPorId(int id) {
         for (Proceso p : colaNuevos) {
-            if (p.getId() == id) return p;
+            if (p.getPid() == id) return p;
         }
         for (Proceso p : colaListos) {
-            if (p.getId() == id) return p;
+            if (p.getPid() == id) return p;
         }
         for (Proceso p : colaBloqueados) {
-            if (p.getId() == id) return p;
+            if (p.getPid() == id) return p;
         }
         return null;
     }
