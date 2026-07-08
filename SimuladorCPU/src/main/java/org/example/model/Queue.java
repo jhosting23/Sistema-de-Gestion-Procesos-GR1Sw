@@ -19,6 +19,7 @@ public class Queue {
     public static final String FIFO = "FIFO";
     public static final String SJF = "SJF";
     public static final String PRIORIDADES = "Prioridades";
+    public static final String ROUND_ROBIN = "Round Robin";
 
     public Queue() {
         this.colaNuevos = new LinkedList<>();
@@ -61,7 +62,9 @@ public class Queue {
         }
 
         switch (algoritmo) {
+
             case FIFO:
+            case ROUND_ROBIN:
                 return colaListos.removeFirst();
 
             case SJF:
