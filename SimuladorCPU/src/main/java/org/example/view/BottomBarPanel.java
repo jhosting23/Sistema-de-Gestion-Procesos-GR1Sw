@@ -26,6 +26,7 @@ public class BottomBarPanel extends JPanel {
     private JLabel clockLabel;
     private final GanttPanel ganttBody;
     private DefaultTableModel tableModel;
+    private final LogPanel logPanel;
 
     public BottomBarPanel(SimulationEngine engine) {
         super(new BorderLayout());
@@ -61,9 +62,11 @@ public class BottomBarPanel extends JPanel {
         gantt.add(ganttScroll, BorderLayout.CENTER);
 
         JPanel tablePanel = buildProcessTable();
+        logPanel = new LogPanel(engine);
 
         lowerSplit.add(gantt, BorderLayout.WEST);
         lowerSplit.add(tablePanel, BorderLayout.CENTER);
+        lowerSplit.add(logPanel, BorderLayout.EAST);
 
         add(stats, BorderLayout.NORTH);
         add(lowerSplit, BorderLayout.CENTER);
@@ -135,6 +138,7 @@ public class BottomBarPanel extends JPanel {
         }
 
         ganttBody.refresh();
+        logPanel.refresh();
     }
 
     private String stateLabel(Process.State state) {

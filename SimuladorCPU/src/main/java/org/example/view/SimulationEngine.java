@@ -30,6 +30,16 @@ public class SimulationEngine {
     private final List<Runnable> listeners = new ArrayList<>();
     private final Random random = new Random();
 
+    private final List<String> eventLog = new ArrayList<>();
+
+    private void log(String message) {
+        eventLog.add(String.format("[t=%d] %s", currentTime, message));
+    }
+
+    public List<String> getEventLog() {
+        return new ArrayList<>(eventLog);
+    }
+
     public void addListener(Runnable r) {
         listeners.add(r);
     }
@@ -39,6 +49,7 @@ public class SimulationEngine {
     }
 
     public void applyConfig(int cores, double clockSpeed, int quantum, Algorithm algorithm, boolean preemption) {
+        log("Config: " + algorithm.name() + ", " + cores + " core(s), quantum=" + quantum + ", preemption=" + preemption);
         this.clockSpeed = clockSpeed;
         this.quantum = Math.max(1, quantum);
         this.algorithm = algorithm;
@@ -68,6 +79,7 @@ public class SimulationEngine {
         String pid = new StringBuilder().append('P').append(pidCounter++).toString();
         Process p = new Process(pid, arrival, burst, priority, memory, color);
         allProcesses.add(p);
+        log("Proceso " + pid + " creado (ráfaga=" + burst + ", prioridad=" + priority + ", llegada=" + arrival + ")");
         notifyListeners();
         return p;
     }
@@ -92,6 +104,8 @@ public class SimulationEngine {
         running = new Process[numCores];
         quantumUsed = new int[numCores];
         ganttHistory.clear();
+        eventLog.clear();
+        log("Simulación reiniciada");
         notifyListeners();
     }
 
@@ -100,6 +114,7 @@ public class SimulationEngine {
             if (p.state == Process.State.NEW && p.arrival <= currentTime) {
                 p.state = Process.State.READY;
                 readyQueue.add(p);
+                log(p.pid + " llegó → LISTO");
             }
         }
 
@@ -115,6 +130,7 @@ public class SimulationEngine {
                             readyQueue.add(cur);
                             running[c] = null;
                             quantumUsed[c] = 0;
+                            log(cur.pid + " quantum expirado → LISTO");
                         }
                         break;
                     case SRTF: {
@@ -161,6 +177,7 @@ public class SimulationEngine {
                     p.coreAssigned = -1;
                     running[c] = null;
                     quantumUsed[c] = 0;
+                    log(p.pid + " → TERMINADO (TT=" + p.turnaroundTime + "t, W=" + p.waitingTime + "t)");
                 }
             }
         }
@@ -179,6 +196,7 @@ public class SimulationEngine {
         outgoing.coreAssigned = -1;
         readyQueue.add(outgoing);
         readyQueue.remove(incoming);
+        log(incoming.pid + " desalojó a " + outgoing.pid + " en Core " + core);
         assignToCore(core, incoming);
     }
 
@@ -211,6 +229,7 @@ public class SimulationEngine {
         if (p.startTime < 0) p.startTime = currentTime;
         running[core] = p;
         quantumUsed[core] = 0;
+        log(p.pid + " → EJECUTANDO en Core " + core);
     }
 
     public int getCurrentTime() { return currentTime; }
