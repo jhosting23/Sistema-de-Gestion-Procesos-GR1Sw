@@ -1,6 +1,9 @@
 package org.example.view;
 
 import java.awt.Color;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,9 +34,20 @@ public class SimulationEngine {
     private final Random random = new Random();
 
     private final List<String> eventLog = new ArrayList<>();
+    private static final String LOG_FILE = "log.txt";
 
     private void log(String message) {
-        eventLog.add(String.format("[t=%d] %s", currentTime, message));
+        String entry = String.format("[t=%d] %s", currentTime, message);
+        eventLog.add(entry);
+        writeToLogFile(entry);
+    }
+
+    private void writeToLogFile(String entry) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(LOG_FILE, true))) {
+            writer.println(entry);
+        } catch (IOException e) {
+            System.err.println("No se pudo escribir en " + LOG_FILE + ": " + e.getMessage());
+        }
     }
 
     public List<String> getEventLog() {
