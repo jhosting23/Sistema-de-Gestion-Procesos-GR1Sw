@@ -1,6 +1,7 @@
 package org.example.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -16,11 +17,15 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableModel;
 
+import org.example.controller.Controlador;
+import org.example.model.Proceso;
+import org.example.model.Queue;
+
 public class BottomBarPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient SimulationEngine engine;
+    private final transient Controlador controlador;
 
     private final JLabel utilValue, waitingValue, turnaroundValue, throughputValue;
     private JLabel clockLabel;
@@ -28,9 +33,9 @@ public class BottomBarPanel extends JPanel {
     private DefaultTableModel tableModel;
     private final LogPanel logPanel;
 
-    public BottomBarPanel(SimulationEngine engine) {
+    public BottomBarPanel(Controlador controlador) {
         super(new BorderLayout());
-        this.engine = engine;
+        this.controlador = controlador;
         setBackground(Colors.COLOR_BG);
         setBorder(new EmptyBorder(0, 0, 0, 0));
 
@@ -62,7 +67,7 @@ public class BottomBarPanel extends JPanel {
         gantt.add(ganttScroll, BorderLayout.CENTER);
 
         JPanel tablePanel = buildProcessTable();
-        logPanel = new LogPanel(engine);
+        logPanel = new LogPanel(controlador);
 
         lowerSplit.add(gantt, BorderLayout.WEST);
         lowerSplit.add(tablePanel, BorderLayout.CENTER);
@@ -118,22 +123,23 @@ public class BottomBarPanel extends JPanel {
     }
 
     public final void refresh() {
-        int t = engine.getCurrentTime();
+        int t = controlador.getCurrentTime();
         int minutes = t / 60;
         int seconds = t % 60;
         clockLabel.setText(UiHelpers.iconText(String.format("⏱ Simulation Clock: %02d:%02d   (t = %d)", minutes, seconds, t)));
 
-        int pct = (int) Math.round(engine.getCpuUtilization() * 100);
+        int pct = (int) Math.round(controlador.getCpuUtilization() * 100);
         utilValue.setText(String.format("%d%%", pct));
-        waitingValue.setText(String.format("%.1f t", engine.getAvgWaiting()));
-        turnaroundValue.setText(String.format("%.1f t", engine.getAvgTurnaround()));
-        throughputValue.setText(String.format("%.2f proc/t", engine.getThroughput()));
+        waitingValue.setText(String.format("%.1f t", controlador.getAvgWaiting()));
+        turnaroundValue.setText(String.format("%.1f t", controlador.getAvgTurnaround()));
+        throughputValue.setText(String.format("%.2f proc/t", controlador.getThroughput()));
 
         tableModel.setRowCount(0);
-        for (Process p : engine.getAllProcesses()) {
+        for (Proceso p : controlador.getTodosLosProcesos()) {
             tableModel.addRow(new Object[]{
-                p.pid, stateLabel(p.state), p.arrival, p.burst, Math.max(p.remaining, 0),
-                p.priority, p.waitingTime, p.state == Process.State.FINISHED ? p.turnaroundTime : "-"
+                p.getNombre(), stateLabel(p.getEstado()), p.getTiempoLlegada(), p.getTiempoRafaga(), p.getTiempoRestante(),
+                p.getPrioridad(), p.getTiempoEsperaAcumulado(),
+                Queue.ESTADO_TERMINADO.equals(p.getEstado()) ? p.getTiempoRetorno() : "-"
             });
         }
 
@@ -141,12 +147,13 @@ public class BottomBarPanel extends JPanel {
         logPanel.refresh();
     }
 
-    private String stateLabel(Process.State state) {
-        switch (state) {
-            case RUNNING: return "Running";
-            case READY: return "Ready";
-            case FINISHED: return "Finished";
-            case NEW:
+    private String stateLabel(String estado) {
+        switch (estado) {
+            case Queue.ESTADO_EJECUTANDO: return "Running";
+            case Queue.ESTADO_LISTO: return "Ready";
+            case Queue.ESTADO_TERMINADO: return "Finished";
+            case Queue.ESTADO_BLOQUEADO: return "Blocked";
+            case Queue.ESTADO_NUEVO:
             default: return "Waiting";
         }
     }
@@ -161,9 +168,14 @@ public class BottomBarPanel extends JPanel {
         }
 
         void refresh() {
-            List<Process[]> history = engine.getGanttHistory();
-            int cores = engine.getNumCores();
-            int width = Math.max(300, history.size() * CELL_W + 10);
+            List<String[]> history = controlador.getGanttHistory();
+            int cores = Math.max(1, controlador.getNumCores());
+            int maxTime = controlador.getCurrentTime();
+            for (String[] entry : history) {
+                int t = Integer.parseInt(entry[0]);
+                if (t > maxTime) maxTime = t;
+            }
+            int width = Math.max(300, (maxTime + 1) * CELL_W + 10);
             int height = Math.max(80, cores * CELL_H + 10);
             setPreferredSize(new Dimension(width, height));
             revalidate();
@@ -173,24 +185,19 @@ public class BottomBarPanel extends JPanel {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            List<Process[]> history = engine.getGanttHistory();
+            List<String[]> history = controlador.getGanttHistory();
             g.setFont(new Font("Segoe UI", Font.PLAIN, 9));
-            for (int t = 0; t < history.size(); t++) {
-                Process[] slot = history.get(t);
-                for (int c = 0; c < slot.length; c++) {
-                    int x = t * CELL_W;
-                    int y = c * CELL_H;
-                    Process p = slot[c];
-                    if (p != null) {
-                        g.setColor(p.color);
-                        g.fillRect(x, y, CELL_W - 1, CELL_H - 2);
-                        g.setColor(java.awt.Color.WHITE);
-                        g.drawString(p.pid, x + 2, y + CELL_H - 8);
-                    } else {
-                        g.setColor(Colors.COLOR_BORDER);
-                        g.drawRect(x, y, CELL_W - 1, CELL_H - 2);
-                    }
-                }
+            for (String[] entry : history) {
+                int t = Integer.parseInt(entry[0]);
+                int pid = Integer.parseInt(entry[1]);
+                int core = Integer.parseInt(entry[3]);
+                int x = t * CELL_W;
+                int y = core * CELL_H;
+                Color color = controlador.getColor(pid);
+                g.setColor(color);
+                g.fillRect(x, y, CELL_W - 1, CELL_H - 2);
+                g.setColor(Color.WHITE);
+                g.drawString("P" + pid, x + 2, y + CELL_H - 8);
             }
         }
     }

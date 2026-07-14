@@ -3,3 +3,22 @@
 [t=2] P1 llegó → LISTO
 [t=2] P1 → EJECUTANDO en Core 0
 [t=0] Simulación reiniciada
+[t=0] Proceso P1 creado (ráfaga=2, prioridad=4, llegada=3)
+[t=0] Simulación iniciada
+[t=3] P1 llegó → LISTO
+[t=25] Simulación pausada
+[t=25] Simulación detenida
+[t=25] Proceso P2 creado (ráfaga=4, prioridad=4, llegada=25)
+[t=25] Proceso P3 creado (ráfaga=7, prioridad=4, llegada=26)
+[t=25] Proceso P4 creado (ráfaga=4, prioridad=2, llegada=26)
+[t=25] Proceso P5 creado (ráfaga=5, prioridad=4, llegada=28)
+[t=25] Proceso P6 creado (ráfaga=3, prioridad=1, llegada=27)
+[t=25] Proceso P7 creado (ráfaga=2, prioridad=2, llegada=26)
+[t=25] Proceso P8 creado (ráfaga=2, prioridad=3, llegada=28)
+[t=25] Simulación iniciada
+[t=26] P3 llegó → LISTO
+[t=26] P4 llegó → LISTO
+[t=26] P7 llegó → LISTO
+[t=27] P6 llegó → LISTO
+[t=28] P5 llegó → LISTO
+[t=28] P8 llegó → LISTO

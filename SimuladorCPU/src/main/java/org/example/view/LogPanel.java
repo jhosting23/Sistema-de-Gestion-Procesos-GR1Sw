@@ -14,16 +14,18 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 
+import org.example.controller.Controlador;
+
 public class LogPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient SimulationEngine engine;
+    private final transient Controlador controlador;
     private final JTextArea logArea;
 
-    public LogPanel(SimulationEngine engine) {
+    public LogPanel(Controlador controlador) {
         super(new BorderLayout());
-        this.engine = engine;
+        this.controlador = controlador;
         setBackground(Colors.COLOR_PANEL);
         setBorder(new CompoundBorder(
             new MatteBorder(0, 1, 0, 0, Colors.COLOR_BORDER),
@@ -53,7 +55,7 @@ public class LogPanel extends JPanel {
     }
 
     public void refresh() {
-        List<String> logs = engine.getEventLog();
+        List<String> logs = controlador.getEventLog();
         StringBuilder sb = new StringBuilder();
         for (int i = logs.size() - 1; i >= 0; i--) {
             sb.append(logs.get(i)).append('\n');

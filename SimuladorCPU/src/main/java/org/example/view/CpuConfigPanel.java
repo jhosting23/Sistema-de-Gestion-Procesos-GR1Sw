@@ -8,7 +8,6 @@ import java.awt.Font;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -18,23 +17,26 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 
+import org.example.controller.Controlador;
+import org.example.model.Cpu;
+import org.example.model.Proceso;
+import org.example.model.Queue;
+
 public class CpuConfigPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient SimulationEngine engine;
+    private final transient Controlador controlador;
 
     private final JSpinner coresSpinner;
-    private final JSpinner clockSpinner;
     private final JSpinner quantumSpinner;
     private final JComboBox<String> algoCombo;
-    private final JCheckBox preemptCheck;
     private final JPanel coreStatusContainer;
     private final JLabel utilLabel;
 
-    public CpuConfigPanel(SimulationEngine engine) {
+    public CpuConfigPanel(Controlador controlador) {
         super();
-        this.engine = engine;
+        this.controlador = controlador;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(Colors.COLOR_PANEL);
         setBorder(new CompoundBorder(new MatteBorder(0, 1, 0, 0, Colors.COLOR_BORDER), new EmptyBorder(15, 15, 15, 15)));
@@ -44,36 +46,23 @@ public class CpuConfigPanel extends JPanel {
         add(Box.createVerticalStrut(10));
 
         add(UiHelpers.fieldLabel("NUMBER OF CORES"));
-        coresSpinner = UiHelpers.spinnerField(engine.getNumCores());
+        coresSpinner = UiHelpers.spinnerField(controlador.getNumCores());
         ((SpinnerNumberModel) coresSpinner.getModel()).setMinimum(1);
         add(coresSpinner);
         add(Box.createVerticalStrut(8));
 
-        add(UiHelpers.fieldLabel("CLOCK SPEED (GHZ)"));
-        clockSpinner = new JSpinner(new SpinnerNumberModel(engine.getClockSpeed(), 0.1, 10.0, 0.1));
-        clockSpinner.setAlignmentX(Component.LEFT_ALIGNMENT);
-        clockSpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
-        add(clockSpinner);
-        add(Box.createVerticalStrut(8));
-
         add(UiHelpers.fieldLabel("TIME QUANTUM"));
-        quantumSpinner = UiHelpers.spinnerField(engine.getQuantum());
+        quantumSpinner = UiHelpers.spinnerField(controlador.getQuantum());
         ((SpinnerNumberModel) quantumSpinner.getModel()).setMinimum(1);
         add(quantumSpinner);
         add(Box.createVerticalStrut(8));
 
         add(UiHelpers.fieldLabel("SCHEDULING ALGORITHM"));
-        algoCombo = new JComboBox<>(new String[]{"Round Robin", "FCFS", "SJF", "Priority", "SRTF"});
+        algoCombo = new JComboBox<>(new String[]{Queue.ROUND_ROBIN, Queue.FIFO, Queue.SJF, Queue.PRIORIDADES});
+        algoCombo.setSelectedItem(controlador.getAlgoritmoActivo());
         algoCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
         algoCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
         add(algoCombo);
-        add(Box.createVerticalStrut(8));
-
-        preemptCheck = new JCheckBox("Enable Preemption");
-        preemptCheck.setSelected(engine.isPreemption());
-        preemptCheck.setAlignmentX(Component.LEFT_ALIGNMENT);
-        preemptCheck.setBackground(Colors.COLOR_PANEL);
-        add(preemptCheck);
         add(Box.createVerticalStrut(10));
 
         JButton apply = new JButton("Apply Configuration");
@@ -113,22 +102,9 @@ public class CpuConfigPanel extends JPanel {
 
     private void applyConfiguration() {
         int cores = (Integer) coresSpinner.getValue();
-        double clock = (Double) clockSpinner.getValue();
         int quantum = (Integer) quantumSpinner.getValue();
-        boolean preemption = preemptCheck.isSelected();
-        SimulationEngine.Algorithm algorithm = algorithmFromLabel((String) algoCombo.getSelectedItem());
-        engine.applyConfig(cores, clock, quantum, algorithm, preemption);
-    }
-
-    private SimulationEngine.Algorithm algorithmFromLabel(String label) {
-        switch (label) {
-            case "FCFS": return SimulationEngine.Algorithm.FCFS;
-            case "SJF": return SimulationEngine.Algorithm.SJF;
-            case "Priority": return SimulationEngine.Algorithm.PRIORITY;
-            case "SRTF": return SimulationEngine.Algorithm.SRTF;
-            case "Round Robin":
-            default: return SimulationEngine.Algorithm.RR;
-        }
+        String algoritmo = (String) algoCombo.getSelectedItem();
+        controlador.aplicarConfiguracion(cores, quantum, algoritmo);
     }
 
     /**
@@ -144,16 +120,24 @@ public class CpuConfigPanel extends JPanel {
      */
     private void refreshInternal() {
         coreStatusContainer.removeAll();
-        Process[] running = engine.getRunning();
-        for (int i = 0; i < running.length; i++) {
-            String status = running[i] != null ? String.valueOf(running[i].pid).concat(" running") : "Idle";
-            coreStatusContainer.add(coreStatusLine(new StringBuilder("Core ").append(i).toString(), status, running[i] != null));
-            if (i < running.length - 1) coreStatusContainer.add(Box.createVerticalStrut(4));
+        java.util.List<Cpu> cpus = controlador.getCpus();
+        int numCores = controlador.getNumCores();
+        for (int i = 0; i < numCores; i++) {
+            Proceso actual = null;
+            for (Cpu c : cpus) {
+                if (c.getCore() == i) {
+                    actual = c.getProcesoActual();
+                    break;
+                }
+            }
+            String status = actual != null ? actual.getNombre().concat(" running") : "Idle";
+            coreStatusContainer.add(coreStatusLine(new StringBuilder("Core ").append(i).toString(), status, actual != null));
+            if (i < numCores - 1) coreStatusContainer.add(Box.createVerticalStrut(4));
         }
         coreStatusContainer.revalidate();
         coreStatusContainer.repaint();
 
-        int pct = (int) Math.round(engine.getCpuUtilization() * 100);
+        int pct = (int) Math.round(controlador.getCpuUtilization() * 100);
         utilLabel.setText(Integer.toString(pct).concat("%"));
     }
 

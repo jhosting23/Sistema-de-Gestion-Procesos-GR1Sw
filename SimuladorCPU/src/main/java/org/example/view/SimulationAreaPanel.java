@@ -18,11 +18,15 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
+import org.example.controller.Controlador;
+import org.example.model.Cpu;
+import org.example.model.Proceso;
+
 public class SimulationAreaPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient SimulationEngine engine;
+    private final transient Controlador controlador;
 
     private JPanel readyContent;
     private JLabel readyInfo;
@@ -34,9 +38,9 @@ public class SimulationAreaPanel extends JPanel {
     private JLabel finishedInfo;
     private final JLabel simInfoLabel;
 
-    public SimulationAreaPanel(SimulationEngine engine) {
+    public SimulationAreaPanel(Controlador controlador) {
         super(new BorderLayout());
-        this.engine = engine;
+        this.controlador = controlador;
         setBackground(Colors.COLOR_BG);
         setBorder(new EmptyBorder(12, 12, 0, 12));
 
@@ -105,7 +109,7 @@ public class SimulationAreaPanel extends JPanel {
         return sectionPanel("Running Process", "0", runningInfo, 110, new Color(0xE9, 0xF7, 0xEA), runningContent);
     }
 
-    private JPanel coreCard(int index, Process p) {
+    private JPanel coreCard(int index, Proceso p) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(Colors.COLOR_BG);
         card.setBorder(new LineBorder(Colors.COLOR_BORDER));
@@ -118,8 +122,8 @@ public class SimulationAreaPanel extends JPanel {
         card.add(top, BorderLayout.NORTH);
         JLabel state;
         if (p != null) {
-            state = new JLabel(new StringBuilder().append(p.pid).append("  (").append(p.remaining).append("t left)").toString(), SwingConstants.CENTER);
-            state.setForeground(p.color);
+            state = new JLabel(new StringBuilder().append(p.getNombre()).append("  (").append(p.getTiempoRestante()).append("t left)").toString(), SwingConstants.CENTER);
+            state.setForeground(controlador.getColor(p.getPid()));
             state.setFont(new Font("Segoe UI", Font.BOLD, 12));
         } else {
             state = new JLabel("Idle", SwingConstants.CENTER);
@@ -130,9 +134,8 @@ public class SimulationAreaPanel extends JPanel {
     }
 
     private JPanel buildWaitingQueue() {
-        waitingContent = new JPanel(new BorderLayout());
+        waitingContent = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         waitingContent.setBackground(Colors.COLOR_PANEL);
-        waitingContent.setBorder(new EmptyBorder(15, 15, 15, 15));
         waitingInfo = new JLabel();
         return sectionPanel("Waiting Queue (I/O)", "0", waitingInfo, 90, new Color(0xFF, 0xF6, 0xE5), waitingContent);
     }
@@ -144,15 +147,15 @@ public class SimulationAreaPanel extends JPanel {
         return sectionPanel("Finished Processes", "0", finishedInfo, 90, new Color(0xF0, 0xF0, 0xF0), finishedContent);
     }
 
-    private JPanel finishedChip(Process p) {
+    private JPanel finishedChip(Proceso p) {
         JPanel chip = new JPanel();
         chip.setLayout(new BoxLayout(chip, BoxLayout.Y_AXIS));
         chip.setBackground(Colors.COLOR_BG);
         chip.setBorder(new CompoundBorder(new LineBorder(Colors.COLOR_BORDER), new EmptyBorder(5, 10, 5, 10)));
-        JLabel name = new JLabel(UiHelpers.iconText(new StringBuilder().append("✓ ").append(p.pid).toString()));
+        JLabel name = new JLabel(UiHelpers.iconText(new StringBuilder().append("✓ ").append(p.getNombre()).toString()));
         name.setFont(new Font("Segoe UI", Font.BOLD, 11));
         name.setForeground(Colors.COLOR_GREEN);
-        JLabel sub = new JLabel(new StringBuilder().append("TT:").append(p.turnaroundTime).append("t  W:").append(p.waitingTime).append("t").toString());
+        JLabel sub = new JLabel(new StringBuilder().append("TT:").append(p.getTiempoRetorno()).append("t  W:").append(p.getTiempoEsperaAcumulado()).append("t").toString());
         sub.setForeground(Colors.COLOR_TEXT_GRAY);
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         chip.add(name);
@@ -160,24 +163,35 @@ public class SimulationAreaPanel extends JPanel {
         return chip;
     }
 
+    private JLabel blockedChip(Proceso p) {
+        JLabel chip = new JLabel(new StringBuilder().append(p.getNombre()).append(" (I/O)").toString());
+        chip.setOpaque(true);
+        chip.setBackground(java.awt.Color.WHITE);
+        Color c = controlador.getColor(p.getPid());
+        chip.setForeground(c);
+        chip.setBorder(new CompoundBorder(new LineBorder(c), new EmptyBorder(4, 8, 4, 8)));
+        return chip;
+    }
+
     public final void refresh() {
         StringBuilder sb = new StringBuilder();
-        sb.append(engine.getAlgorithm().name()).append(" · ").append(engine.getNumCores()).append(" Cores · Quantum = ").append(engine.getQuantum());
+        sb.append(controlador.getAlgoritmoActivo()).append(" · ").append(controlador.getNumCores()).append(" Cores · Quantum = ").append(controlador.getQuantum());
         simInfoLabel.setText(sb.toString());
 
-        List<Process> ready = engine.getReadyQueue();
+        List<Proceso> ready = controlador.getColaListos();
         readyContent.removeAll();
         if (ready.isEmpty()) {
             JLabel empty = new JLabel("Queue is empty");
             empty.setForeground(Colors.COLOR_TEXT_GRAY);
             readyContent.add(empty);
         } else {
-            for (Process p : ready) {
-                JLabel chip = new JLabel(new StringBuilder().append(p.pid).append(" (rem ").append(p.remaining).append("t)").toString());
+            for (Proceso p : ready) {
+                Color c = controlador.getColor(p.getPid());
+                JLabel chip = new JLabel(new StringBuilder().append(p.getNombre()).append(" (rem ").append(p.getTiempoRestante()).append("t)").toString());
                 chip.setOpaque(true);
-                chip.setBackground(Color.WHITE);
-                chip.setForeground(p.color);
-                chip.setBorder(new CompoundBorder(new LineBorder(p.color), new EmptyBorder(4, 8, 4, 8)));
+                chip.setBackground(java.awt.Color.WHITE);
+                chip.setForeground(c);
+                chip.setBorder(new CompoundBorder(new LineBorder(c), new EmptyBorder(4, 8, 4, 8)));
                 readyContent.add(chip);
             }
         }
@@ -185,23 +199,44 @@ public class SimulationAreaPanel extends JPanel {
         readyContent.revalidate();
         readyContent.repaint();
 
-        Process[] running = engine.getRunning();
+        List<Cpu> cpus = controlador.getCpus();
+        int numCores = controlador.getNumCores();
         runningContent.removeAll();
-        runningContent.setLayout(new GridLayout(1, running.length, 10, 0));
+        runningContent.setLayout(new GridLayout(1, Math.max(1, numCores), 10, 0));
         int busy = 0;
-        for (int i = 0; i < running.length; i++) {
-            runningContent.add(coreCard(i, running[i]));
-            if (running[i] != null) busy++;
+        for (int i = 0; i < numCores; i++) {
+            Proceso running = null;
+            for (Cpu c : cpus) {
+                if (c.getCore() == i) {
+                    running = c.getProcesoActual();
+                    break;
+                }
+            }
+            runningContent.add(coreCard(i, running));
+            if (running != null) busy++;
         }
         runningInfo.setText(String.valueOf(busy));
         runningContent.revalidate();
         runningContent.repaint();
 
-        waitingInfo.setText("0");
+        List<Proceso> blocked = controlador.getColaBloqueados();
+        waitingContent.removeAll();
+        if (blocked.isEmpty()) {
+            JLabel empty = new JLabel("No processes waiting on I/O");
+            empty.setForeground(Colors.COLOR_TEXT_GRAY);
+            waitingContent.add(empty);
+        } else {
+            for (Proceso p : blocked) {
+                waitingContent.add(blockedChip(p));
+            }
+        }
+        waitingInfo.setText(String.valueOf(blocked.size()));
+        waitingContent.revalidate();
+        waitingContent.repaint();
 
-        List<Process> finished = engine.getFinishedProcesses();
+        List<Proceso> finished = controlador.getProcesosTerminados();
         finishedContent.removeAll();
-        for (Process p : finished) {
+        for (Proceso p : finished) {
             finishedContent.add(finishedChip(p));
         }
         finishedInfo.setText(String.valueOf(finished.size()));

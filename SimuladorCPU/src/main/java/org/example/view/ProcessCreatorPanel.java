@@ -21,6 +21,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 
+import org.example.controller.Controlador;
+import org.example.model.Proceso;
+import org.example.model.Queue;
+
 public class ProcessCreatorPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
@@ -32,21 +36,20 @@ public class ProcessCreatorPanel extends JPanel {
         new Color(0x67, 0x3A, 0xB7)
     };
 
-    private final transient SimulationEngine engine;
+    private final transient Controlador controlador;
 
     private final JSpinner arrivalSpinner;
     private final JSpinner burstSpinner;
     private final JSpinner prioritySpinner;
-    private final JSpinner memorySpinner;
     private final transient List<JPanel> colorDots = new ArrayList<>();
     private Color selectedColor = PALETTE[0];
 
     private final JLabel poolCountLabel;
     private final JPanel poolContainer;
 
-    public ProcessCreatorPanel(SimulationEngine engine) {
+    public ProcessCreatorPanel(Controlador controlador) {
         super();
-        this.engine = engine;
+        this.controlador = controlador;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(Colors.COLOR_PANEL);
         setBorder(new CompoundBorder(new MatteBorder(0, 0, 0, 1, Colors.COLOR_BORDER), new EmptyBorder(15, 15, 15, 15)));
@@ -76,11 +79,6 @@ public class ProcessCreatorPanel extends JPanel {
         add(UiHelpers.fieldLabel("PRIORITY"));
         prioritySpinner = UiHelpers.spinnerField(4);
         add(prioritySpinner);
-        add(Box.createVerticalStrut(8));
-
-        add(UiHelpers.fieldLabel("MEMORY (MB)"));
-        memorySpinner = UiHelpers.spinnerField(127);
-        add(memorySpinner);
         add(Box.createVerticalStrut(10));
 
         add(UiHelpers.fieldLabel("COLOR"));
@@ -125,17 +123,16 @@ public class ProcessCreatorPanel extends JPanel {
         int arrival = (Integer) arrivalSpinner.getValue();
         int burst = (Integer) burstSpinner.getValue();
         int priority = (Integer) prioritySpinner.getValue();
-        int memory = (Integer) memorySpinner.getValue();
-        engine.addProcess(arrival, burst, priority, memory, selectedColor);
+        controlador.crearProceso(arrival, burst, priority, selectedColor);
     }
 
     public final void refresh() {
-        List<Process> all = engine.getAllProcesses();
+        List<Proceso> all = controlador.getTodosLosProcesos();
         poolCountLabel.setText(String.valueOf(all.size()));
 
         poolContainer.removeAll();
         for (int i = 0; i < all.size(); i++) {
-            Process p = all.get(i);
+            Proceso p = all.get(i);
             poolContainer.add(buildPoolCard(p));
             if (i < all.size() - 1) poolContainer.add(Box.createVerticalStrut(8));
         }
@@ -143,17 +140,18 @@ public class ProcessCreatorPanel extends JPanel {
         poolContainer.repaint();
     }
 
-    private String stateLabel(Process.State state) {
-        switch (state) {
-            case RUNNING: return "Running";
-            case READY: return "Ready";
-            case FINISHED: return "Finished";
-            case NEW:
+    private String stateLabel(String estado) {
+        switch (estado) {
+            case Queue.ESTADO_EJECUTANDO: return "Running";
+            case Queue.ESTADO_LISTO: return "Ready";
+            case Queue.ESTADO_TERMINADO: return "Finished";
+            case Queue.ESTADO_BLOQUEADO: return "Blocked";
+            case Queue.ESTADO_NUEVO:
             default: return "Waiting";
         }
     }
 
-    private JPanel buildPoolCard(Process p) {
+    private JPanel buildPoolCard(Proceso p) {
         JPanel card = new JPanel(new BorderLayout());
         card.setAlignmentX(Component.LEFT_ALIGNMENT);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
@@ -162,12 +160,12 @@ public class ProcessCreatorPanel extends JPanel {
 
         JPanel top = new JPanel(new BorderLayout());
         top.setOpaque(false);
-        JLabel name = new JLabel(new StringBuilder().append(p.pid).append("   ").append(stateLabel(p.state)).toString());
+        JLabel name = new JLabel(new StringBuilder().append(p.getNombre()).append("   ").append(stateLabel(p.getEstado())).toString());
         name.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        name.setForeground(p.color);
+        name.setForeground(controlador.getColor(p.getPid()));
         top.add(name, BorderLayout.WEST);
 
-        JLabel sub = new JLabel(new StringBuilder().append("Burst: ").append(p.burst).append("t   Arr: ").append(p.arrival).append("t").toString());
+        JLabel sub = new JLabel(new StringBuilder().append("Burst: ").append(p.getTiempoRafaga()).append("t   Arr: ").append(p.getTiempoLlegada()).append("t").toString());
         sub.setForeground(Colors.COLOR_TEXT_GRAY);
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 11));
 

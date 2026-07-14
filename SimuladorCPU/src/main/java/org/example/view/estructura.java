@@ -8,6 +8,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.example.controller.Controlador;
+
 public class estructura extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -20,29 +22,30 @@ public class estructura extends JFrame {
         setLayout(new BorderLayout());
         getContentPane().setBackground(Colors.COLOR_BG);
 
-        SimulationEngine engine = new SimulationEngine();
+        Controlador controlador = new Controlador();
 
-        TopBarPanel topBar = new TopBarPanel(engine);
+        TopBarPanel topBar = new TopBarPanel(controlador);
         add(topBar, BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout());
         center.setBackground(Colors.COLOR_BG);
-        ProcessCreatorPanel processCreator = new ProcessCreatorPanel(engine);
-        SimulationAreaPanel simulationArea = new SimulationAreaPanel(engine);
-        CpuConfigPanel cpuConfig = new CpuConfigPanel(engine);
+        ProcessCreatorPanel processCreator = new ProcessCreatorPanel(controlador);
+        SimulationAreaPanel simulationArea = new SimulationAreaPanel(controlador);
+        CpuConfigPanel cpuConfig = new CpuConfigPanel(controlador);
         center.add(processCreator, BorderLayout.WEST);
         center.add(simulationArea, BorderLayout.CENTER);
         center.add(cpuConfig, BorderLayout.EAST);
         add(center, BorderLayout.CENTER);
 
-        BottomBarPanel bottomBar = new BottomBarPanel(engine);
+        BottomBarPanel bottomBar = new BottomBarPanel(controlador);
         add(bottomBar, BorderLayout.SOUTH);
 
-        engine.addListener(() -> {
+        controlador.addListener(() -> {
             processCreator.refresh();
             simulationArea.refresh();
             cpuConfig.refresh();
             bottomBar.refresh();
+            topBar.refresh();
         });
     }
 

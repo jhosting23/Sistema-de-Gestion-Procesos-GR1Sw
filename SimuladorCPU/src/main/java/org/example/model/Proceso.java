@@ -25,7 +25,7 @@ public class Proceso {
         this.tiempoEsperaAcumulado = 0;
     }
 
-    public int getId() {
+    public int getPid() {
         return id;
     }
 
