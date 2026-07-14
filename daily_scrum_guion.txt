@@ -1,0 +1,24 @@
+
+2. Qué hice ayer
+- Armé toda la estructura de GitHub para la parte de la Vista (capa View).
+- Creé y organicé todos los paneles principales del simulador dentro del paquete org.example.view:
+  TopBarPanel, BottomBarPanel, ProcessCreatorPanel, SimulationAreaPanel y CpuConfigPanel.
+- También dejé listos los archivos de soporte de la vista: Colors.java, UiHelpers.java, Process.java,
+  SimulationEngine.java y estructura.java (ventana principal).
+- Verifiqué que la estructura de carpetas siga el patrón MVC y que los commits quedaran organizados
+  en la rama ViewGrupo1 para que el equipo pueda integrar su trabajo sin conflictos.
+
+3. Qué voy a hacer hoy
+- Agregar funcionalidades adicionales sobre la vista ya estructurada, como el panel de log de eventos
+  que registra en tiempo real los cambios de estado de los procesos durante la simulación.
+- Apoyar al equipo en la integración entre la capa View y las clases del modelo (Proceso, Queue)
+  a través del Controlador.
+- Revisar que no haya conflictos de merge al integrar los cambios de las otras ramas con ViewGrupo1.
+
+4. Bloqueos / impedimentos
+- Por el momento no tengo bloqueos. Si surge algún conflicto al hacer merge con las ramas
+  de modelo o controlador, lo comunico de inmediato al equipo.
+
+5. Cierre
+"Eso sería todo de mi parte. Cualquier duda sobre la estructura de la vista o cómo encajan
+los paneles dentro del MVC, me preguntan. Gracias."
