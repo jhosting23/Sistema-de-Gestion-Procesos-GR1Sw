@@ -90,7 +90,7 @@ public class ProcessCreatorPanel extends JPanel {
         create.setAlignmentX(Component.LEFT_ALIGNMENT);
         create.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         create.setBackground(Colors.COLOR_BLUE);
-        create.setForeground(java.awt.Color.WHITE);
+        create.setForeground(java.awt.Color.BLACK);
         create.setFocusPainted(false);
         create.addActionListener(e -> createProcess());
         add(create);

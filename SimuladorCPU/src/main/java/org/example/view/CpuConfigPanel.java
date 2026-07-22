@@ -69,7 +69,7 @@ public class CpuConfigPanel extends JPanel {
         apply.setAlignmentX(Component.LEFT_ALIGNMENT);
         apply.setMaximumSize(new Dimension(Integer.MAX_VALUE, 32));
         apply.setBackground(Colors.COLOR_BLUE);
-        apply.setForeground(java.awt.Color.WHITE);
+        apply.setForeground(java.awt.Color.BLACK);
         apply.setFocusPainted(false);
         apply.addActionListener(e -> applyConfiguration());
         add(apply);

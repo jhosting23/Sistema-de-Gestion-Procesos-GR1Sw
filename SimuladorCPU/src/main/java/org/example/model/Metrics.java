@@ -131,11 +131,12 @@ public class Metrics {
     }
 
     //Calcula el porcentaje de utilización del procesador durante la simulación.
-    public synchronized double calculateCpuUtilization(int tiempoTotal) {
-        if (tiempoTotal <= 0) {
+    public synchronized double calculateCpuUtilization(int tiempoTotal, int numCores) {
+        if (tiempoTotal <= 0 || numCores <= 0) {
             return 0.0;
         }
-        return ((double) ciclosOcupados / tiempoTotal) * 100.0;
+        double porcentaje = ((double) ciclosOcupados / (tiempoTotal * (double) numCores)) * 100.0;
+        return Math.min(porcentaje, 100.0);
     }
 
     //Calcula la métrica de Productividad (Throughput) del sistema:

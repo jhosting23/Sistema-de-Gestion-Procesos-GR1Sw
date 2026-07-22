@@ -263,7 +263,7 @@ public class Controlador {
     }
 
     public double getCpuUtilization() {
-        return metrics.calculateCpuUtilization(metrics.getCurrentTime()) / 100.0;
+        return metrics.calculateCpuUtilization(metrics.getCurrentTime(), numCores) / 100.0;
     }
 
     public double getAvgWaiting() {
